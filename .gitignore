@@ -1,0 +1,6 @@
+*.HEIC
+*.jpg
+*.pem
+.playwright-mcp/
+test_photo.*
+japan_screenshot.png
