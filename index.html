@@ -121,6 +121,28 @@
     line-height: 1.4;
   }
 
+  input[type="range"] {
+    width: 100%;
+    height: 36px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #aaa;
+    border-radius: 3px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #333;
+    margin-top: -8px;
+  }
+
   .field-group {
     display: flex;
     flex-direction: column;
@@ -170,6 +192,19 @@
 
   <div class="controls" id="controls">
     <div class="field-group">
+      <label>Zoom</label>
+      <input type="range" id="zoomSlider" min="1" max="3" step="0.01" value="1">
+    </div>
+    <div class="field-group">
+      <label>Horizontal Position</label>
+      <input type="range" id="panXSlider" min="0" max="1" step="0.01" value="0.5">
+    </div>
+    <div class="field-group">
+      <label>Vertical Position</label>
+      <input type="range" id="panYSlider" min="0" max="1" step="0.01" value="0.5">
+    </div>
+
+    <div class="field-group">
       <label>Date &amp; Time</label>
       <input type="datetime-local" id="dateInput">
     </div>
@@ -200,11 +235,17 @@ const dateInput = document.getElementById('dateInput');
 const locationInput = document.getElementById('locationInput');
 const GRAIN = 30 / 100;
 const WARMTH = 15 / 100;
+const zoomSlider = document.getElementById('zoomSlider');
+const panXSlider = document.getElementById('panXSlider');
+const panYSlider = document.getElementById('panYSlider');
 const saveBtn = document.getElementById('saveBtn');
 const resetBtn = document.getElementById('resetBtn');
 
 let originalImage = null;
 let renderQueued = false;
+let imgZoom = 1;
+let imgPanX = 0.5;
+let imgPanY = 0.5;
 
 function now() {
   const d = new Date();
@@ -338,7 +379,14 @@ function render() {
   offCanvas.height = photoH;
   const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
 
-  offCtx.drawImage(img, 0, 0, photoW, photoH);
+  const zoom = imgZoom;
+  const srcW = img.naturalWidth / zoom;
+  const srcH = img.naturalHeight / zoom;
+  const maxSx = img.naturalWidth - srcW;
+  const maxSy = img.naturalHeight - srcH;
+  const sx = maxSx * imgPanX;
+  const sy = maxSy * imgPanY;
+  offCtx.drawImage(img, sx, sy, srcW, srcH, 0, 0, photoW, photoH);
 
   const imageData = offCtx.getImageData(0, 0, photoW, photoH);
   const data = imageData.data;
@@ -446,6 +494,19 @@ function drawText(w, h, offset) {
   }
 }
 
+zoomSlider.addEventListener('input', () => {
+  imgZoom = parseFloat(zoomSlider.value);
+  queueRender();
+});
+panXSlider.addEventListener('input', () => {
+  imgPanX = parseFloat(panXSlider.value);
+  queueRender();
+});
+panYSlider.addEventListener('input', () => {
+  imgPanY = parseFloat(panYSlider.value);
+  queueRender();
+});
+
 [dateInput, locationInput].forEach(el =>
   el.addEventListener('input', queueRender)
 );
@@ -478,6 +539,8 @@ resetBtn.addEventListener('click', () => {
   fileInput.value = '';
   dateInput.value = now();
   locationInput.value = '';
+  imgZoom = 1; imgPanX = 0.5; imgPanY = 0.5;
+  zoomSlider.value = 1; panXSlider.value = 0.5; panYSlider.value = 0.5;
 });
 </script>
 </body>
